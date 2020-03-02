@@ -4,3 +4,14 @@ body {
   color: $body-color;
   font-family: sans-serif;
 }
+
+table {
+  border-collapse: collapse;
+}
+
+table,
+tr,
+th,
+td{
+  border: 1px solid black;
+}
