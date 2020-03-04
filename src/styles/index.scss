@@ -1,17 +1,13 @@
-$body-color: black;
+$body-color: slateblue;
+$body-color: rgba(24, 11, 207, 0.842);
 
 body {
   color: $body-color;
   font-family: sans-serif;
 }
-
-table {
-  border-collapse: collapse;
+mark {
+  background: yellow
 }
-
-table,
-tr,
-th,
-td{
-  border: 1px solid black;
+figcaption{
+  color: black;
 }
