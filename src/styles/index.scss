@@ -1,10 +1,20 @@
 $body-color: slateblue;
+$body-color: rgba(24, 11, 207, 0.842);
 
 body {
   color: $body-color;
   font-family: sans-serif;
 }
+<<<<<<< HEAD
 
 figcaption{
   color: black;
 } 
+=======
+mark {
+  background: yellow
+}
+figcaption{
+  color: black;
+}
+>>>>>>> 45d0b53546899b1f73b428292757b18c80a2923c
