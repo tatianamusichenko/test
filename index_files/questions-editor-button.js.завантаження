@@ -1,0 +1,152 @@
+jQuery.widget( 'gc.questionsEditorButton', {
+	options: {
+		questionaryId: null,
+		editorOptions: null,
+		canDelete: false,
+		light: false
+	},
+	needDelete: false,
+	modal: null,
+	_create: function () {
+		//this.element.html("Тестирование")
+		var self = this;
+
+		self.questionsEl = $('<div/>')
+
+		if ( self.options.questionaryId ) {
+			ajaxCall( "/pl/teach/questionary/get?id=" + self.options.questionaryId, {}, {}, function( response ) {
+				var options = self.options.editorOptions;
+				options.questionary = response.data.model;
+				self.questionsEl.questionsEditor(options);
+			} )
+
+		}
+		else {
+			self.questionsEl.questionsEditor(this.options.editorOptions);
+		}
+
+		let noTestingStr = 'Create testing';
+		let testingStr = 'Testing. Questions';
+		if (typeof Yii != 'undefined') {
+			noTestingStr = Yii.t('common', noTestingStr);
+			testingStr = Yii.t('common', testingStr);
+		}
+
+		var setButtonTitle = function ( onStart ) {
+			var value = self.questionsEl.questionsEditor('getValue')
+			if ( ( value.questions.length > 0 || value.id > 0 ) && ! value.deleted )  {
+				self.element.html(testingStr + ': ' + value.questions.length);
+			}
+			else {
+				self.element.html(noTestingStr);
+			}
+
+			if ( ! onStart && self.options.onChange ) {
+				self.options.onChange(value);
+			}
+		};
+
+		self.questionsEl.on('changed', function(e,onStart) {
+			//console.log( self.questionsEl.questionsEditor('getValue') );
+			setButtonTitle(onStart);
+		});
+		setTimeout( function() {
+			setButtonTitle();
+		}, 300 )
+
+
+		this.element.click( function() {
+			self.showModal();
+		})
+	},
+	showModal: function() {
+		var self = this;
+
+		if ( ! self.modal ) {
+			self.modal = window.gcModalFactory.create({show: false});
+			self.modal.getModalEl().find('.modal-dialog').width( '600px' )
+			if ( this.options.light ) {
+				self.modal.getModalEl().find('.modal-dialog').addClass('questionary-light-dialog')
+			}
+
+
+
+			self.modal.setContent("")
+			self.questionsEl.appendTo( self.modal.getContentEl() );
+
+			let acceptStr = 'Accept';
+			let addQuestionStr = 'Add question';
+			let deleteStr = 'Delete';
+			if ( this.options.light ) {
+				acceptStr = "Save";
+			}
+			if (typeof Yii != 'undefined') {
+				acceptStr = Yii.t('common', acceptStr);
+				deleteStr = Yii.t('common', deleteStr);
+				addQuestionStr = Yii.t('common', addQuestionStr);
+			}
+
+			let $btnApply = $('<button class="btn btn-primary pull-left">'+acceptStr+'</button>');
+			$btnApply.appendTo ( self.modal.getFooterEl() )
+			$btnApply.click( function() {
+				if (self.questionsEl.questionsEditor('validate')) {
+					self.questionsEl.questionsEditor('apply');
+
+					if ( self.options.onTrySave ) {
+						var newValue = self.questionsEl.questionsEditor('getValue');
+						self.options.onTrySave( newValue, function() {
+							self.modal.hide();
+						});
+					}
+					else {
+
+						self.modal.hide();
+					}
+				}
+			});
+
+			let $btnAddQuestion = $('<button class="btn btn-default pull-left"> <span class="fa fa-plus"></span>'+addQuestionStr+'</button>');
+			$btnAddQuestion.appendTo ( self.modal.getFooterEl() )
+			$btnAddQuestion.click( function() {
+				self.questionsEl.questionsEditor('addQuestion');
+			});
+
+			if ( self.options.canDelete ) {
+
+				let $btnDelete = $('<button class="btn btn-delete btn-danger pull-right">'+deleteStr+'</button>');
+				$btnDelete.appendTo ( self.modal.getFooterEl() );
+
+				$btnDelete.click( function() {
+					if ( ! confirm( Yii.t( 'common', 'Are you sure?' ) ) ) {
+						return;
+					}
+					self.questionsEl.questionsEditor('deleteQuestionary');
+
+					if ( self.options.onTrySave ) {
+						var newValue = self.questionsEl.questionsEditor('getValue');
+						self.options.onTrySave( newValue, function() {
+							self.modal.hide();
+
+						});
+					}
+					else {
+
+						self.modal.hide();
+					}
+				})
+
+			}
+
+			if ( self.options.questionaryId ) {
+				//$btnSettings = $('<button class="btn btn-default pull-left"> <span class="fa fa-cog"></span> Настройки тестирования </button>')
+				//$btnSettings.appendTo ( self.modal.getFooterEl() )
+				//$btnSettings.click( function() {
+					//window.open( "/pl/teach/questionary/update-testing?id=" + self.options.questionaryId + "&part=settings" )
+					//self.modal.hide();
+				//})
+			}
+		}
+
+		self.modal.show();
+	}
+});

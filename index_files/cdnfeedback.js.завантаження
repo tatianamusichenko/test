@@ -1,0 +1,160 @@
+const reasonQuestions = {
+    type: 'reason',
+    question: "Пожалуйста, подскажите причину нажатия?",
+    answers: [
+        '<button type="button" class="btn btn-outline-primary reason-btn" id="quality">Не устроило качество видео</button>',
+        '<button type="button" class="btn btn-outline-primary reason-btn" id="speed">Не устроила скорость видео</button>',
+        '<button type="button" class="btn btn-outline-primary reason-btn" id="fun">Просто из любопытства</button>',
+    ]
+};
+
+const resultQuestions = {
+    type: 'result',
+    question: "Проблема устранена?",
+    answers: [
+        '<button type="button" class="btn btn-outline-success result-btn" id="ok">Да</button>',
+        '<button type="button" class="btn btn-outline-danger result-btn" id="support">Нет, отписать в техподдержку</button>',
+        '<button type="button" class="btn btn-outline-primary result-btn" id="back">Вернуться на старый плеер</button>',
+    ]
+};
+
+function upgradeCdn(data) {
+    var url = '/pl/fileservice/video/upgrade-cdn';
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url, false);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.send(JSON.stringify({'video-hash' : data.videoHash}));
+}
+
+function feedbackCdn(data) {
+    var url = '/pl/fileservice/video/feedback-cdn';
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url, false);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.send(JSON.stringify({'reason' : data.reason, 'result' : data.result}));
+}
+
+function closeFeedback() {
+    var url = '/pl/fileservice/video/close-feedback';
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url, false);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.send(JSON.stringify({'reason' : 'close', 'result' : 'close'}));
+}
+
+function buildQuestion(data) {
+    var question = data.question;
+    var answers = '';
+
+    data.answers.forEach(function (answer) {
+        answers += answer;
+    });
+
+    return question + answers;
+}
+
+function show(el) {
+    el.style.display = 'block';
+}
+
+function close(el) {
+    el.style.display = 'none';
+}
+
+function remove(el) {
+    el.parentNode.removeChild(el);
+}
+
+(function () {
+    var changes = document.querySelectorAll('.vhe-cdn-change');
+    changes.forEach(function (change) {
+        change.style.display = 'none';
+    });
+
+    var change = document.querySelector('.vhe-cdn-change');
+
+    if (!change) {
+        console.log('No cdn change container!');
+        return;
+    }
+
+    var link = change.querySelector('.disclaimer-url');
+    var feedbackReason = change.querySelector('.feedback#reason');
+    var feedbackResult = change.querySelector('.feedback#result');
+    var feedbackClose = change.querySelector('.feedback#close');
+
+    var feedbackStatus = change.dataset['feedbackStatus'];
+    var currentCdn = change.dataset['currentCdn'];
+
+    change.style.display = 'block';
+    feedbackReason.style.display = 'none';
+    feedbackResult.style.display = 'none';
+
+    if (currentCdn === 'integros') {
+        //change.style.height = '35px';
+        link.innerHTML = 'Проблемы со скоростью';
+    } else {
+        feedbackReason.innerHTML = buildQuestion(reasonQuestions);
+        feedbackResult.innerHTML = buildQuestion(resultQuestions);
+
+        link.innerHTML = 'Вернуться на основной плеер';
+
+        switch (feedbackStatus) {
+            case 'noFeedback' :
+                show(feedbackReason);
+                close(feedbackResult);
+                break;
+            case 'hasReason' :
+                show(feedbackResult);
+                close(feedbackReason);
+                break;
+            case 'hasResult' :
+                //change.style.height = '35px';
+                remove(feedbackReason);
+                remove(feedbackResult);
+                break;
+        }
+    }
+
+    feedbackClose.addEventListener('click', function (e) {
+        e.preventDefault();
+        closeFeedback();
+        close(change);
+    });
+
+    var btns = change.querySelectorAll('.btn');
+    btns.forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            if (btn.classList.contains('reason-btn')) {
+                change.dataset.reason = btn.id;
+
+                show(feedbackResult);
+                close(feedbackReason);
+            }
+
+            if (btn.classList.contains('result-btn')) {
+                change.dataset.result = btn.id;
+                feedbackCdn(change.dataset);
+                feedbackResult.innerHTML = 'Спасибо!';
+
+                if (btn.id === 'back') {
+                    upgradeCdn(change.dataset);
+                    window.location.reload();
+                }
+
+                setTimeout(function () {
+                    remove(feedbackReason);
+                    remove(feedbackResult);
+
+                    //change.style.height = 'auto';
+                }, 2000);
+            }
+        });
+    });
+
+    link.addEventListener('click', function (e) {
+        e.preventDefault();
+        upgradeCdn(change.dataset);
+        window.location.reload();
+    });
+})();
