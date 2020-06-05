@@ -7,14 +7,17 @@ let user = {
     data: "12.05.1990",
     height: "177.5",
     hasAnimal: true,
-    getname: function () {
+    getName: function () {
         console.log("name", this.name);
     },
-    getsurname: function () {
+    getSurname: function () {
         console.log("surname", this.surname);
     },
-    getdata: function () {
+    getData: function () {
         console.log("data", this.data);
+    },
+    getUser: function () {
+        console.log(user.name + " " + user.surname + " " + user.data, this.user);
     }
 };
 console.log(user.name);
@@ -27,8 +30,7 @@ console.log(user.hasAnimal);
 let food = ["pizza", "rolls", "roast potatoes", "chicken wings", "chocolate cake"]
 console.log(food);
 
-user.getname();
-user.getsurname();
-user.getdata();
-
-console.log(user.name + " " + user.surname + " " + user.data);
+user.getName();
+user.getSurname();
+user.getData();
+user.getUser();
